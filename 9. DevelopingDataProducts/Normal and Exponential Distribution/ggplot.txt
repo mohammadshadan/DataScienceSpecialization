@@ -1,0 +1,37 @@
+num_of_sim  <- 1000    #Number of Simulations
+sample_size <- 40      #Sample Size
+lambda      <- 0.2     #Rate Parameter
+```
+Calculating the the **Theoretical** Mean, Standard Deviation and Variance based on Data Provided
+```{r}
+theo_mean <- 1/lambda                     #Theoretical Mean of the Distribution
+sigma     <- 1/lambda
+theo_sd   <- sigma*(1/sqrt(sample_size))  #Theoretical Stan. Dev. of the Distribution
+theo_var  <- sigma^2*(1/sample_size)      #Theoretical Variance of the Distribution
+```
+Creating the sample data using `rexp()` as adviced in the assignment
+```{r}
+set.seed(1234) #To regenrate the same Random Numbers
+#Generating Data for Exponential Distribution using rexp()
+exp_data <- rexp(n = num_of_sim * sample_size, rate = lambda)
+#Creating a matrix with 1000 (number of simulation) rows and 40 (sample size) columns
+test_data <- matrix(exp_data, num_of_sim, sample_size)
+#Converting the matrix into data frame
+test_data <- as.data.frame(test_data)
+#Adding a Column "row_mean" to the data set for mean of each row
+test_data$row_mean <- apply(test_data,1,mean)
+
+
+
+g3 <- ggplot(test_data, aes(row_mean))
+g3 <- g3 + geom_histogram(aes(y=..density..), binwidth = .5, fill="white",
+color = "black",alpha = .2)
+g3 <- g3 + geom_density(aes(colour="Sample"), size=1.5)
+g3 <- g3 + stat_function(fun=dnorm, args=list(mean=theo_mean, sd=theo_sd),
+aes(colour="Theoretical"), size = 1.5)
+g3 <- g3 + geom_vline( aes(xintercept = theo_mean, colour="Theoretical"))
+g3 <- g3 + geom_vline( aes(xintercept = mean(test_data$row_mean), colour="Sample"))
+g3 <- g3 + scale_colour_manual(name='', values = c("Theoretical"="red", "Sample"="blue"))
+g3 <- g3 + labs(x = "Sample Means of 1000 Simulations")
+g3 <- g3 + labs(y = "Frequency")
+g3 <- g3 + labs(title = "Figure 2 \n Compareing Theoretical(Normal) and Sample Distribution")

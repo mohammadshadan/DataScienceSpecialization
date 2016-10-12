@@ -1,0 +1,10 @@
+Daniela Petruzalek · 3 months ago · Edited
+@Do: in reality the problem is in the wording of the project. If you read this discussion (https://www.coursera.org/learn/statistical-inference/discussions/all/threads/Hh0VldfQEeWrJhKRHKXGQw) it will be somewhat clear that what they want is the theoretical variance of the sample mean versus the actual (calculated) variance of the sample mean, not the variance of the original population (which would be 1/lambda^2)
+
+I had the same interpretation as you do, but after reading this thread I have rewritten my project with the (1/lambda^2)/n approach.
+
+Basically we are trying to prove that the Central Limit Theorem works to predict the *mean* of the population of the underlying distribution. We are not trying to prove the CLT for the Variance of the underlying distribution (which would be the variance of the exponential distribution, 1/lambda^2). IF we were to predict the variance using the CLT, we would need to use another dispersion ratio - the dispersion ratio of the variance (sigma^4).
+
+Since they didn't get so far in the theoretical background, they are just asking for the variance of the sample means. In the case you want to know more about estimating the variance of the population by the CLT, I recommend you to read the following paper:
+
+http://www.edwardomey.com/nonsave/CLTforsandr.pdf

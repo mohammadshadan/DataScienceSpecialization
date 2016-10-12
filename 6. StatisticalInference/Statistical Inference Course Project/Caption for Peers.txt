@@ -1,0 +1,17 @@
+CLT
+
+Please Note :
+- Report   : Pages 1, 2, 3
+- APPENDIX : Page 4
+
+To save space in the Report the codes of Plots were moved to APPENDIX
+
+Tooth Growth
+Please Note :
+- Because of constraint on maximum number of pages in Report and APEENDIX as 3, I have moved all the Codes related to Figures for Exploratory Data Analysis to APPENDIX
+Report   : Pages 1, 2, 3
+Appendix : Pages 3, 4
+
+- Plesase review the Apprendix also for corresponding observation to verify the results
+
+- To Save space I have printed only the pValue and Confidence Interval in the Hypothesis Test

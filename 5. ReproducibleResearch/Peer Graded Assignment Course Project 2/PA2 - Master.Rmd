@@ -1,0 +1,323 @@
+---
+title: "Peer Graded Assignment: Course Project 2 (Reproducible Research)"
+author: "MOHAMMAD SHADAN"
+date: "September 4, 2016"
+output: 
+  html_document: 
+    keep_md: yes
+---
+###**TITLE**
+Natural Events cause Public Health and Economic Problems in U.S.
+
+###**SYNOPSIS**
+
+Storms and other severe weather events can cause both public health and economic problems for communities and municipalities. Many severe events can result in fatalities, injuries, and property damage, and preventing such outcomes to the extent possible is a key concern.
+
+This project involves exploring the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database. This database tracks characteristics of major storms and weather events in the United States, including when and where they occur, as well as estimates of any fatalities, injuries, and property damage.
+
+Data analysis address the below concerns:
+
+* Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+
+* Across the United States, which types of events have the greatest economic consequences
+
+###**ASSUMPTIONS ON WHICH ANALYSIS IS BASED**
+
+* Population Health is affected by "FATALITIES" and "INJURIES"  
+
+* Economic Consequences are because of Property Damage ("PROPDMG") and Crop Damage ("CROPDMG")
+
+###**DATA PROCESSING**
+* Storm Data can be download from the [URL](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2)
+
+* Set the Working Directory (e.g. setwd("~/R/RR")
+
+* Move the StormData.csv file in to Working Directory before the script is run
+
+```{r}
+#Install the Required Packages
+#install.packages("dplyr"); install.packages("ggplot2"); install.packages("gridExtra")
+
+#Loading Requierd Libraries
+library(dplyr); library(ggplot2); library(gridExtra);
+```
+
+
+```{r, cache = TRUE }
+#Extracting data file StormData.csv 
+s <- read.csv("StormData.csv",sep = ",", header = TRUE)
+```
+
+```{r}
+#Number of Columns and Rows in the StormData.csv database
+dim(s)
+
+#Name of the Cloumns  in the StormData.csv datase
+names(s)
+```
+
+####For this analysis we will be consdering 8 Columns as below. The respective column numbers are mentioned in brackets
+
+####ETYTPE(8), FATALITIES(23), INJURIES(24), PROPDMG(25), PROPDMGEXP(26), CROPDMG(27), CROPDMGEXP(28)
+
+```{r}
+#Fetching only the required Columns
+s<-s[,c(8,23:28)]
+head(s)
+```
+
+
+1. Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+
+**Data Processing Related to Population Health**
+
+Considering that Population Health is affected by "FATALITIES" and "INJURIES"
+
+```{r}
+##Data Processing for FATALITIES (one of reasons affecting Poplulation Health)
+agg_fatalities <- aggregate(FATALITIES~EVTYPE, s, FUN=sum, na.rm=TRUE)
+agg_fatalities <- arrange(agg_fatalities, desc(FATALITIES))
+agg_fatalities5 <- agg_fatalities[1:5,]
+head(agg_fatalities5)
+```
+
+```{r}
+#Script to plot Total Fatalities with respect to Event Type
+ft <- ggplot(agg_fatalities5, aes(x=reorder(EVTYPE, -FATALITIES), y=FATALITIES,FILL=EVTYPE))
+ft <- ft + geom_bar(aes(fill=EVTYPE),stat="identity")
+ft <- ft +  geom_text(aes(label=round(FATALITIES,0), hjust=0.5, vjust=-0.7), size=3.5)
+ft <- ft +  labs(x = "\n EVENT TYPE \n")
+ft <- ft +  labs(y = "\n FATALITIES \n")
+ft <- ft +  labs(title = "\n EVENTS CAUSING FATALITIES \n (TOP 5)\n")
+ft <- ft +  coord_cartesian(ylim=c(0,6000))
+ft <- ft +  theme(axis.text.x = element_text(angle=45, hjust=1, size=10, face = "bold"))
+ft <- ft +  theme(legend.position="none")
+ft <- ft +  theme(plot.title = element_text(size=11, face = "bold"))
+
+```
+
+```{r}
+##Data Processing for INJURIES (one of reasons affecting Poplulation Health)
+agg_injuries <- aggregate(INJURIES~EVTYPE, s, FUN=sum, na.rm=TRUE)
+agg_injuries <- arrange(agg_injuries, desc(INJURIES))
+agg_injuries5 <- agg_injuries[1:5,]
+head(agg_injuries5)
+
+###Script to plot Total Injuries with respect to Event Type
+ij <- ggplot(agg_injuries5, aes(x=reorder(EVTYPE, -INJURIES), y=INJURIES,FILL=EVTYPE))
+ij <- ij + geom_bar(aes(fill=EVTYPE),stat="identity")
+ij <- ij + geom_text(aes(label=round(INJURIES,0),  hjust=0.5, vjust=-0.7),size=3.5)
+ij <- ij + labs(x="\n EVENT TYPE \n")
+ij <- ij + labs(y="\n INJURIES \n")
+ij <- ij + labs(title = "\n EVENTS CAUSING INJURIES \n (TOP 5)\n")
+ij <- ij + coord_cartesian(ylim=c(0,100000))
+ij <- ij + theme(axis.text.x = element_text(angle=45, hjust=1, size=10, face = "bold"))
+ij <- ij + theme(legend.position="none")
+ij <- ij + theme(plot.title = element_text(size=11, face = "bold"))
+
+
+```
+
+```{r}
+#Panel Plot for Events affecting Population Health
+grid.arrange(ft, ij, ncol=2)
+```
+
+
+```{r}
+###Data Processing  to merge the data sets of Total Fatalities and Total Injuries
+merge_health <- merge(agg_fatalities, agg_injuries, all=TRUE)
+merge_health[is.na(merge_health)] <- 0
+merge_health <- mutate(merge_health, TOTAL = FATALITIES + INJURIES)
+merge_health <- arrange(merge_health, desc(TOTAL))
+```
+
+```{r}
+#Top Five Events affecting Public Health (Fatalities and Injuries)
+head(merge_health,5)
+```
+
+```{r}
+#Fetching Top 5 Events
+merge_health <- merge_health[1:5,]
+
+###Script to plot Total Fatalities and Injuries with respect to Event Type
+ph <- ggplot(merge_health, aes(x=reorder(EVTYPE, -TOTAL), y=TOTAL))
+ph <- ph + geom_bar(aes(fill=EVTYPE),stat="identity")
+ph <- ph + geom_text(aes(label=round(TOTAL,0),  hjust=0.5, vjust=-0.7),size=3.5)
+ph <- ph + labs(x="\n EVENT TYPE \n")
+ph <- ph + labs(y="\n TOTAL AFFECTED\n")
+ph <- ph + labs(title = "\n Top 5 Events Affecting Public Health \n (Considering FATALITIES and INJURIES together)\n")
+ph <- ph + coord_cartesian(ylim=c(0,110000))
+ph <- ph + theme(axis.text.x = element_text(angle=45, hjust=1, size=12, face = "bold"))
+ph <- ph + theme(legend.position="none")
+ph <- ph + theme(plot.title = element_text(size=14, face = "bold"))
+
+#Plot for Top 5 Events Affecting Public Health
+ph
+```
+
+
+**Data Processing related to Economic Consequences**
+
+Considering economic Consequences are because of Property Damage("PROPDMG") and Crop Damage("CROPDMG")
+
+
+* Page 12 of [Storm Data Documentation](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf) states " Alphabetical characters used to signify magnitude include "K" for thousands, "M" for millions, and "B" for billions (in the columns PROPDMGEXP, CROPDMGEXP")
+
+* Assuming Lower Case Letter (e.g. m) means the same as Upper Case Letters (e.g. M)
+
+    * Update "h" and "H" to 100 (10^2)  (Though not mentioned in the Document but assuming "h", "H" means Hundred)
+
+    * Update "k" and "K" to 1000 (10^3)
+
+    * Update "m" and "M" to 1,000,000 (10^6)
+
+    * Update "b" and "B" to 1,000,000,000 (10^9)
+  
+* In Storm Data Documentation there are no details to show what "-", "?", "+" stands for so I chose to ignore them in the calculations
+
+```{r}
+
+#Data Processing for Property Damage (PROPDMG)
+
+#List of characters in the columns PROPDMGEXP
+table(s$PROPDMGEXP)
+
+p <- filter(s, PROPDMGEXP %in% c("h", "H", "k", "K","m","M","b", "B"))
+table(p$PROPDMGEXP)
+
+#Replacing "h", "H", "k", "K","m","M","b", "B" by their numerical counterparts
+p$PROPDMG <- ifelse((p$PROPDMGEXP =="h"| p$PROPDMGEXP =="H"),p$PROPDMG*10^2,p$PROPDMG)
+p$PROPDMG <- ifelse((p$PROPDMGEXP =="k"| p$PROPDMGEXP =="K"),p$PROPDMG*10^3,p$PROPDMG)
+p$PROPDMG <- ifelse((p$PROPDMGEXP =="m"| p$PROPDMGEXP =="M"),p$PROPDMG*10^6,p$PROPDMG)
+p$PROPDMG <- ifelse((p$PROPDMGEXP =="b"| p$PROPDMGEXP =="B"),p$PROPDMG*10^9,p$PROPDMG)
+
+#Aggrgating Total Property Damage by Event Type
+agg_propdmg <- aggregate(PROPDMG~EVTYPE, p, FUN=sum, na.rm=TRUE)
+
+#Sorting the data so that Event causing Maximum Property Damage is on Top
+agg_propdmg <- arrange(agg_propdmg, desc(PROPDMG))
+
+#Selecting the top 5 Events causing maximum Property Damage
+agg_propdmg5 <- agg_propdmg[1:5,]
+
+```
+```{r}
+#Top Five Events Causing Property Damage
+head(agg_propdmg5)
+
+pd <- ggplot(agg_propdmg5, aes(x=reorder(EVTYPE, -PROPDMG), y=PROPDMG/10^9)) 
+pd <- pd + geom_bar(fill="red", colour="black",stat="identity") 
+pd <- pd +  geom_text(aes(label=round(PROPDMG/10^9,0), size=1, hjust=0.5, vjust=-0.7))
+pd <- pd +  labs(x = "\n EVENT TYPE \n")
+pd <- pd +  labs(y = "\n PROPERTY DAMAGE (in Billion $) \n")
+pd <- pd +  labs(title = "\n EVENTS CAUSING \n PROPERTY DAMAGE (in Billion $) \n")
+pd <- pd +  coord_cartesian(ylim=c(0,160))
+pd <- pd +  theme(axis.text.x = element_text(angle=45, hjust=1, size=10, face = "bold"))
+
+#pd
+```
+
+
+```{r}
+#Data Processing for Crop Damage (CROPDMG)
+
+#List of characters in the columns CROPDMGEXP
+table(s$CROPDMGEXP)
+
+c <- filter(s, CROPDMGEXP %in% c("h", "H", "k", "K","m","M","b", "B"))
+
+#Replacing "h", "H", "k", "K","m","M","b", "B" by their numerical counterparts
+c$CROPDMG <- ifelse((c$CROPDMGEXP =="h"| c$CROPDMGEXP =="H"),c$CROPDMG*10^2,c$CROPDMG)
+c$CROPDMG <- ifelse((c$CROPDMGEXP =="k"| c$CROPDMGEXP =="K"),c$CROPDMG*10^3,c$CROPDMG)
+c$CROPDMG <- ifelse((c$CROPDMGEXP =="m"| c$CROPDMGEXP =="M"),c$CROPDMG*10^6,c$CROPDMG)
+c$CROPDMG <- ifelse((c$CROPDMGEXP =="b"| c$CROPDMGEXP =="B"),c$CROPDMG*10^9,c$CROPDMG)
+
+##Aggrgating Total Crop Damage by Event Type
+agg_cropdmg <- aggregate(CROPDMG~EVTYPE, c, FUN=sum, na.rm=TRUE)
+
+#Sorting the data so that Event causing maximum Crop Damage is on Top
+agg_cropdmg <- arrange(agg_cropdmg, desc(CROPDMG))
+
+#Selecting the top 5 Events causing maximum Crop Damage
+agg_cropdmg5 <- agg_cropdmg[1:5,]
+
+#Top Five Events Causing Crop Damage
+head(agg_cropdmg5)
+
+cd <- ggplot(agg_cropdmg5, aes(x=reorder(EVTYPE, -CROPDMG), y=CROPDMG/10^9)) 
+cd <- cd + geom_bar(fill="green", colour="black",stat="identity") 
+cd <- cd + geom_text(aes(label=round(CROPDMG/10^9,0), size=1, hjust=0.5, vjust=-0.7))
+cd <- cd + labs(x = "\n EVENT TYPE \n")
+cd <- cd + labs(y = "\n CROP DAMAGE (in Billion $) \n")
+cd <- cd + labs(title = "\n EVENTS CAUSING \n CROP DAMAGE (in Billion $) \n")
+cd <- cd +  coord_cartesian(ylim=c(0,16))
+cd <- cd +  theme(axis.text.x = element_text(angle=45, hjust=1, size=10, face = "bold"))
+
+#cd
+```
+
+```{r}
+##Data Processing to combine FATALITIES and INJURIES to get the TOTAL
+
+#Merging the data sets for Population Damage and Crop Damage
+merge_economic <- merge(agg_propdmg, agg_cropdmg, all=TRUE)
+merge_economic[is.na(merge_economic)] <- 0
+merge_economic <- mutate(merge_economic, TOTAL = PROPDMG + CROPDMG)
+merge_economic <- arrange(merge_economic, desc(TOTAL))
+```
+
+```{r}
+#Top Five Events affecting Public Health (Fatalities and Injuries)
+head(merge_economic,5)
+```
+  
+```{r}
+#Fetching Top 5 Events
+merge_economic <- merge_economic[1:5,]
+
+###Script to plot Total Fatalities and Injuries with respect to Event Type
+ec <- ggplot(merge_economic, aes(x=reorder(EVTYPE, -TOTAL), y=TOTAL/10^9,FILL=EVTYPE))
+ec <- ec + geom_bar(aes(fill=EVTYPE),stat="identity")
+ec <- ec + geom_text(aes(label=round(TOTAL/10^9,0),  hjust=0.5, vjust=-0.7),size=3.5)
+ec <- ec + labs(x="\n EVENT TYPE \n")
+ec <- ec + labs(y="\n TOTAL DAMAGE (in Billion $) \n")
+ec <- ec + labs(title = "\n Top 5 Events With Greatest Economic Consequences \n (Considering PROPERTY and CROP Damage together)\n")
+ec <- ec + coord_cartesian(ylim=c(0,165))
+ec <- ec + theme(axis.text.x = element_text(angle=45, hjust=1, size=11, face = "bold"))
+ec <- ec + theme(legend.position="none")
+ec <- ec + theme(plot.title = element_text(size=14, face = "bold"))
+
+#Plot for Top 5 Events With Greatest Economic Consequences
+ec
+
+```
+
+###**RESULTS**
+
+* Across the United States, most harmful types of events (in order) with respect to population health considering both FATALITIES and INJURIES are :
+
+    1. TORNADO	(96,979)
+
+    2. EXCESSIVE HEAT	(8,428)
+
+    3. TSTM WIND	(7,461)
+    
+    4. FLOOD	(7,259)
+    
+    5. LIGHTNING	(6,046)
+
+
+* Across the United States, types of events (in order) that have the greatest Economic Consequences considering both Property Damage and Crop Damage :
+
+    1. FLOOD (150 Billion Dollars)
+    
+    2. HURRICANE/TYPHONE (68 Billion Dollars)
+    
+    3. TORNADO 	(57 Billion Dollars)
+    
+    4. STORM SURGE 	(43 Billion Dollars)
+    
+    5. HAIL 	(18 Billion Dollars)
+

@@ -1,3 +1,4 @@
+## MOHAMMAD SHADAN
 ## server.R
 ## This files takes the name of Species as input from ui.R and plots 4 different graphs 
 ## and stacks them into a  2x2 multiplot

@@ -1,0 +1,449 @@
+---
+title: "Milestone Report"
+author: "MOHAMMAD SHADAN"
+date: "December 06, 2016"
+output:
+  html_document:
+    keep_md: yes
+  pdf_document: default
+---
+
+###TABLE OF CONTENT    
+- Extracting Data    
+- Summary Statistics     
+- Trial and Error     
+- Creating Sample and Clean Corpus     
+- Document Term Matrix and Term Document Matrix
+- Exploratory Data Analysis    
+- Ngram, Frequency plot and Wordcloud
+- Plan     
+
+
+###Load Required Libraries
+```{r, eval=FALSE, message=FALSE, include=FALSE, results='hide'}
+# install.packages("quanteda")
+# install.packages("tm")
+# install.packages("text2vec")
+# install.packages("RColorBrewer")
+# install.packages("wordcloud") 
+# install.packages("stringi")
+# install.packages("RWeka")
+# install.packages("rJava")
+# install.packages("openNLP")
+# install.packages("Rgraphviz")
+```
+
+```{r,  echo=TRUE, results='hide',message=FALSE}
+library(tm)            #For Text Mining
+library(stringi)       #For string operations
+library(stringr)
+library(wordcloud)     #For Generating Prettyg Word Cloud
+library(rJava)         #Required for RWeka
+library(RWeka)         #For all the classification and evaluation from Weka
+library(ggplot2)       #For Plots
+library(slam)          #To use row_sums function on Term Document Matrix
+```
+
+###Extracting Data
+
+Data can be downloaded from the [URL](https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip])
+
+```{r}
+#Extracting data from en_US.blogs.txt file
+con <- file("en_US.blogs.txt", open = "rb")
+data_blogs  <- readLines(con, encoding="UTF-8", skipNul = TRUE); close(con)
+data_blogs <- iconv(data_blogs,'UTF-8', 'ASCII', "byte")
+```
+```{r}
+#Extracting data from en_US.news.txt file
+con <- file("en_US.news.txt", open = "rb")
+data_news <- readLines(con, encoding="UTF-8", skipNul = TRUE); close(con)
+data_news <- iconv(data_news,'UTF-8', 'ASCII', "byte")
+```
+```{r}
+#Extracting data from en_US.twitter.txt file
+con <- file("en_US.twitter.txt", open = "rb")
+data_twitter  <- readLines(con, encoding="UTF-8", skipNul = TRUE); close(con)
+data_twitter <- iconv(data_twitter,'UTF-8', 'ASCII', "byte")
+```
+
+Issue faced :   
+While extracting the data from text files initially I tried using only the single line readLines command which didn't extract the data from en_US.news.txt file properly because of NULL values. Only about 77,259 lines out of 1010242 were fetched. Thus used with opening and closing the connection which fetched data properly.       
+
+
+##Summary Statistics    
+
+###Size of the text files
+```{r}
+size_blogs   <- file.size("en_US.blogs.txt")
+size_news    <- file.size("en_US.news.txt")
+size_twitter <- file.size("en_US.twitter.txt")
+```
+
+```{r, echo=FALSE}
+cat("Size (in bytes) of text file en_US.blogs.txt    :", size_blogs, 
+  "\nSize (in bytes) of text file en_US.news.txt     :", size_news, 
+  "\nSize (in bytes) of text file en_US.twitter.txt  :", size_twitter)
+```
+
+###Number of lines in each document
+```{r}
+nlines_blogs   <- length(data_blogs)
+nlines_news    <- length(data_news)
+nlines_twitter <- length(data_twitter)
+```
+
+```{r, echo=FALSE}
+cat("Number of lines in text file en_US.blogs.txt   :", nlines_blogs, 
+  "\nNumber of lines in text file en_US.news.txt    :", nlines_news, 
+  "\nNumber of lines in text file en_US.twitter.txt :", nlines_twitter)
+```
+
+###Number of words in each document   
+```{r, include=FALSE}
+word_count_blogs   <- sum(stri_count_words(data_blogs))
+word_count_news    <- sum(stri_count_words(data_news))
+word_count_twitter <- sum(stri_count_words(data_twitter))
+```
+
+```{r, echo=FALSE}
+cat("Number of words in text file en_US.blogs.txt   :", word_count_blogs, 
+  "\nNumber of words in text file en_US.news.txt    :", word_count_news, 
+  "\nNumber of words in text file en_US.twitter.txt :", word_count_twitter)
+```
+
+###Trial and Error      
+1. My initial attempt was the create the corpus for the complete files.   
+2. I tried both `tm` and `quanteda` packages but processing got stuck either while creating either the Corpus or the Document Term Matrix.
+3. So decided to create one percent sample for all the three files to ease processing.
+4. Combined the three one percent sample files to create one sample file
+
+##Creating Sample and Clean Corpus
+
+###Creating samples for the text files to ease processing   
+```{r}
+#Creating one percent (1p) sample dataset
+set.seed(1111)
+data_blogs_1p   <- data_blogs[sample(1:nlines_blogs,0.01*nlines_blogs)]
+data_news_1p    <- data_news[sample(1:nlines_news,0.01*nlines_news)]
+data_twitter_1p <- data_twitter[sample(1:nlines_twitter,0.01*nlines_twitter)]
+
+# #2 Percent
+# data_blogs_2p   <- data_blogs[sample(1:nlines_blogs,0.02*nlines_blogs)]
+# data_news_2p    <- data_news[sample(1:nlines_news,0.02*nlines_news)]
+# data_twitter_2p <- data_twitter[sample(1:nlines_twitter,0.02*nlines_twitter)]
+```
+
+### Combining the three sample files data_blogs, data_news, data_twitter      
+```{r}
+sample_1p <- c(data_blogs_1p,data_news_1p,data_twitter_1p)
+# sample_2p <- c(data_blogs_2p,data_news_2p,data_twitter_2p)
+```
+
+Using `tm` package to create the Corpus and further processing of Corpus   
+
+Function to create Clean Corpus    
+```{r}
+CleanCorpus <- function(x) {
+  y <- Corpus(VectorSource(x))
+  y <- tm_map(y, removePunctuation) 
+  y <- tm_map(y, removeNumbers) 
+#  y <- tm_map(y, removeWords, stopwords("english")) 
+  y <- tm_map(y,  stripWhitespace)  
+  y <- tm_map(y, PlainTextDocument) 
+  return(y)
+}
+```
+
+Create clean Corpus    
+```{r}
+corpus_sample_1p <- CleanCorpus(sample_1p)
+# corpus_sample_2p <- CleanCorpus(sample_2p)
+```
+
+##Document Term Matrix
+```{r}
+##Document Term Matrix   
+#dtm_sample <- DocumentTermMatrix(corpus_sample_1p)   
+
+#Term Document Matrix : Transpose of Document Term Matrix
+tdm_sample <- TermDocumentMatrix(corpus_sample_1p)
+# tdm_sample <- TermDocumentMatrix(corpus_sample_2p) 
+```
+
+```{r, eval=FALSE, include=FALSE}
+#findFreqTerms(tdm_sample, lowfreq = 1000)
+```
+
+
+##Exploratory Data Analysis  
+```{r}
+freq_sample <- sort(row_sums(tdm_sample), decreasing = T)
+wf_sample <- data.frame(word=names(freq_sample), freq=freq_sample)   
+object.size(wf_sample)
+rownames(wf_sample) <- NULL
+object.size(wf_sample)
+head(wf_sample)  
+tail(wf_sample)
+dim(wf_sample)
+```
+
+###Word Frequency Plot
+```{r}
+p <- ggplot(subset(wf_sample, freq>3000), aes(word, freq))
+p <- p + geom_bar(stat="identity")   
+p <- p + theme(axis.text.x=element_text(angle=45, hjust=1))   
+p   
+```
+
+###Wordcloud
+```{r}
+set.seed(1111)
+wordcloud(words = wf_sample$word, freq = wf_sample$freq, min.freq = 100,
+          max.words=500, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+```
+
+##Ngrams
+
+###Bigrams    
+```{r}
+BigramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
+tdm_sample_2gram <- TermDocumentMatrix(corpus_sample_1p, control = list(tokenize = BigramTokenizer))
+freq_sample_2gram <- sort(row_sums(tdm_sample_2gram), decreasing = T)
+ 
+wf_sample_2gram <- data.frame(word=names(freq_sample_2gram), freq=freq_sample_2gram) 
+object.size(wf_sample_2gram)
+rownames(wf_sample_2gram) <- NULL
+object.size(wf_sample_2gram)
+head(wf_sample_2gram)
+dim(wf_sample_2gram)
+
+# rm(tdm_sample_2gram, freq_sample_2gram)
+
+head(wf_sample_2gram$word)
+ngram2 <- as.data.frame(str_split_fixed(wf_sample_2gram$word, " ", 2))
+names(ngram2) <- c("w1", "w2")
+ngram2$freq <- wf_sample_2gram$freq
+
+head(ngram2)
+class(ngram2)
+
+```
+
+###Bigram Frequency Plot   
+```{r}
+p2 <- ggplot(subset(wf_sample_2gram, freq>2000), aes(word, freq))
+p2 <- p2 + geom_bar(stat="identity")   
+p2 <- p2 + theme(axis.text.x=element_text(angle=45, hjust=1))   
+p2
+```
+
+####Wordcloud for Bigram
+```{r}
+set.seed(1111)
+wordcloud(words = wf_sample_2gram$word, freq = wf_sample_2gram$freq, min.freq = 100,
+          max.words=300, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+```
+
+###Trigrams    
+```{r}
+TrigramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3))
+tdm_sample_3gram <- TermDocumentMatrix(corpus_sample_1p, control = list(tokenize = TrigramTokenizer))
+freq_sample_3gram <- sort(row_sums(tdm_sample_3gram), decreasing = T)
+wf_sample_3gram <- data.frame(word=names(freq_sample_3gram), freq=freq_sample_3gram) 
+object.size(wf_sample_3gram)
+rownames(wf_sample_3gram) <- NULL
+object.size(wf_sample_3gram)
+head(wf_sample_3gram)  
+tail(wf_sample_3gram)
+dim(wf_sample_3gram)  
+
+# rm(tdm_sample_3gram, freq_sample_3gram)
+
+head(wf_sample_3gram$word)
+ngram3 <- as.data.frame(str_split_fixed(wf_sample_3gram$word, " ", 3))
+names(ngram3) <- c("w1", "w2", "w3")
+ngram3$freq <- wf_sample_3gram$freq
+
+head(ngram3)
+class(ngram3)
+```
+
+###Trigram Frequency Plot
+```{r}
+p3 <- ggplot(subset(wf_sample_3gram, freq>200), aes(word, freq))
+p3 <- p3 + geom_bar(stat="identity")   
+p3 <- p3 + theme(axis.text.x=element_text(angle=45, hjust=1))   
+p3
+```
+
+####Wordcloud for Trigram
+```{r, warning=FALSE}
+set.seed(1111)
+wordcloud(words = wf_sample_3gram$word, freq = wf_sample_3gram$freq, min.freq = 10,
+          max.words=150, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+```
+
+###Quadgrams    
+```{r}
+QuadgramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 4, max = 4))
+tdm_sample_4gram <- TermDocumentMatrix(corpus_sample_1p, control = list(tokenize =QuadgramTokenizer))
+freq_sample_4gram <- sort(row_sums(tdm_sample_4gram), decreasing = T)
+
+wf_sample_4gram <- data.frame(word=names(freq_sample_4gram), freq=freq_sample_4gram)
+rownames(wf_sample_4gram) <- NULL
+head(wf_sample_4gram)
+tail(wf_sample_4gram)
+object.size(wf_sample_4gram)
+
+head(wf_sample_4gram$word)
+ngram4 <- as.data.frame(str_split_fixed(wf_sample_4gram$word, " ", 4))
+names(ngram4) <- c("w1", "w2", "w3", "w4")
+ngram4$freq <- wf_sample_4gram$freq
+
+head(ngram4)
+class(ngram4)
+
+# head(rownames(wf_sample_4gram))
+# wf_sample_4gram1 <- wf_sample_4gram[, c("word")]
+# head(wf_sample_4gram1)
+# str(wf_sample_4gram)
+# tail(subset(wf_sample_4gram, freq>2))
+# nrow(subset(wf_sample_4gram, freq>2))
+# dim(wf_sample_4gram)
+
+# 
+# freq_sample_4gram1 <- sort(row_sums(tdm_sample_4gram), decreasing = T)
+# dim(wf_sample_4gram1)
+# tail(wf_sample_4gram1)
+
+```
+
+###Quadgram Frequency Plot
+```{r}
+p4 <- ggplot(subset(wf_sample_4gram, freq>50), aes(word, freq))
+p4 <- p4 + geom_bar(stat="identity")   
+p4 <- p4 + theme(axis.text.x=element_text(angle=45, hjust=1))   
+p4
+```
+
+###Pentagrams    
+```{r}
+PentagramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 5, max = 5))
+tdm_sample_5gram <- TermDocumentMatrix(corpus_sample_1p, control = list(tokenize =PentagramTokenizer))
+freq_sample_5gram <- sort(row_sums(tdm_sample_5gram), decreasing = T)
+wf_sample_5gram <- data.frame(word=names(freq_sample_5gram), freq=freq_sample_5gram)
+#object.size(wf_sample_5gram)
+rownames(wf_sample_5gram) <- NULL
+# ngram_5 <- unlist(strsplit(as.character(wf_sample_5gram$word), " "))
+# head(ngram_5)
+
+object.size(wf_sample_5gram)
+head(wf_sample_5gram)
+tail(wf_sample_5gram)
+
+head(wf_sample_5gram$word)
+ngram5 <- as.data.frame(str_split_fixed(wf_sample_5gram$word, " ", 5))
+names(ngram5) <- c("w1", "w2", "w3", "w4", "w5")
+ngram5$freq <- wf_sample_5gram$freq
+
+head(ngram5)
+class(ngram5)
+```
+
+###Word Association
+```{r}
+#snowwords <- findAssocs(tdm_sample, "snow", 0.2) 
+
+```
+
+###Save ngrams as csv files
+```{r}
+write.csv(ngram5, "ngram5.csv", row.names=FALSE)
+write.csv(ngram4, "ngram4.csv", row.names=FALSE)
+write.csv(ngram3, "ngram3.csv", row.names=FALSE)
+write.csv(ngram2, "ngram2.csv", row.names=FALSE)
+
+save(ngram5, file="ngram5_test.RData")
+
+saveRDS(ngram5, "ngram5.rds")
+saveRDS(ngram4, "ngram4.rds")
+saveRDS(ngram3, "ngram3.rds")
+saveRDS(ngram2, "ngram2.rds")
+
+ngram5_test <- readRDS("ngram5_test.rds")
+head(ngram5_test)
+dim(ngram5_test)
+# write.csv(wf_sample_4gram, "ngram4.csv", row.names=FALSE)
+# write.csv(wf_sample_3gram, "ngram3.csv", row.names=FALSE)
+# write.csv(wf_sample_2gram, "ngram2.csv", row.names=FALSE)
+```
+
+
+
+
+###Save ngrams as RData Files
+```{r}
+
+# text123 <- wf_sample_4gram$word[grep("heart of",wf_sample_4gram$word, fixed = TRUE)]
+# text123
+# 
+# 
+# dim(wf_sample_4gram)
+# head(wf_sample_4gram)
+# tail(wf_sample_4gram)
+# 
+# save(wf_sample, file="uni_gram.RData")
+# save(wf_sample_2gram, file="bi_gram.RData")
+# save(wf_sample_3gram, file="tri_gram.csv")
+# save(wf_sample_4gram, file="quad_gram.RData")
+# 
+# dim(wf_sample)
+# dim(wf_sample_2gram)
+# dim(wf_sample_3gram)
+# dim(wf_sample_4gram)
+# 
+# tail(wf_sample)
+# tail(wf_sample_2gram,20)
+# tail(wf_sample_3gram)
+# tail(wf_sample_4gram)
+# ```
+# 
+# ```{r}
+# load("uni_gram.RData")
+# load("bi_gram.RData")
+# load("tri_gram.RData")
+# load("quad_gram.RData")
+# 
+# head(uni_gram.RData)
+
+```
+
+####Wordcloud for Trigram
+```{r, eval=FALSE, warning=FALSE, include=FALSE}
+# set.seed(1111)
+# wordcloud(words = wf_sample_4gram$word, freq = wf_sample_4gram$freq, min.freq = 10,
+#           max.words=30, random.order=FALSE, rot.per=0.35, 
+#           colors=brewer.pal(8, "Dark2"))
+
+# ng <- c(freq_sample_2gram, freq_sample_3gram, freq_sample_4gram)
+# head(ng)
+# tail(ng,50)
+# dim(ng)
+# length(ng)
+# class(ng)
+```
+
+##Plan    
+1. To come up with a mechanism so that  ngram can be referred by the model while making the prediction   
+2. Need to work on ngram which are not present in the Corpora   
+3. Make a prediction model and make it smaller and efficient    
+4. Incorporate the prediction model into a Shiny app
+
+##Note   
+I have included the codes also in the Milestone report and would request Peers to give feedback on the coding as well if it can be made more efficient.    
+
+##Thank You

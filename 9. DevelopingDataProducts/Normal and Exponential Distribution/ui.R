@@ -26,3 +26,12 @@ shinyUI(pageWithSidebar(
 
 #runApp(display.mode='showcase')  
 #runApp()  
+
+# install.packages('rsconnect')
+# install.packages('devtools')
+# library(rsconnect)
+# library(devtools)
+
+# rsconnect::setAccountInfo(name='mohammadshadan', token='6931A58B5F9A1883E3DC48BA8DD341BA', secret='LpHyCgI3yOUrDuwSF55SuacRERG78aBvpiSVNS6b')
+
+#deployApp(appName = "normalandexpdist")

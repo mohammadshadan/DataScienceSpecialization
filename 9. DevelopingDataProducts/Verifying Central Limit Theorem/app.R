@@ -54,11 +54,26 @@ server <- function(input, output) {
     }
     
     par(mfrow = c(2,1))
-    hist(randomVec, col = "blue" )
-    hist(row_mean, col = "red" )
+    hist(randomVec, col = "blue", main="Histogram of Distribution" )
+    hist(row_mean, col = "red", main="Histogram of Sample Mean" )
     par(mfrow = c(1,1))
   })
   
 }
 
 shinyApp(ui = ui, server = server)
+
+# install.packages('rsconnect')
+# install.packages('devtools')
+# library(rsconnect)
+# library(devtools)
+
+# rsconnect::setAccountInfo(name='mohammadshadan', token='6931A58B5F9A1883E3DC48BA8DD341BA', secret='LpHyCgI3yOUrDuwSF55SuacRERG78aBvpiSVNS6b')
+
+#deployApp(appName = "verifyCLT")
+
+
+#runApp(display.mode='showcase')  
+#runApp()  
+#deployApp()
+#rsconnect::deployApp('C:/Users/Lenovo/Documents/R/DSC/shinyapp')

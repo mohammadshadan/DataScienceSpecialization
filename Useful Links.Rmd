@@ -1,0 +1,10 @@
+---
+title: "Useful Links"
+author: "MOHAMMAD SHADAN"
+date: "January 9, 2017"
+output: html_document
+---
+
+###Statistics
+
+1. [The Elements of Statistical Learning - You Tube Videos](https://www.r-bloggers.com/in-depth-introduction-to-machine-learning-in-15-hours-of-expert-videos/)

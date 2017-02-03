@@ -8,3 +8,13 @@ output: html_document
 ###Statistics
 
 1. [The Elements of Statistical Learning - You Tube Videos](https://www.r-bloggers.com/in-depth-introduction-to-machine-learning-in-15-hours-of-expert-videos/)
+
+2. [Harvard - Data Science](http://cs109.github.io/2015/pages/videos.html)
+
+3. [Interview Questios](http://rpubs.com/JDAHAN/172473)
+
+4. [Top 50 ggplot2 Visualizations](http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html)
+
+5. [Google Analytics Academy](https://analyticsacademy.withgoogle.com/)
+
+6. [Minitab - Modeling Statistics](http://support.minitab.com/en-us/minitab/17/topic-library/modeling-statistics/multivariate/principal-components-and-factor-analysis/what-is-pca/)

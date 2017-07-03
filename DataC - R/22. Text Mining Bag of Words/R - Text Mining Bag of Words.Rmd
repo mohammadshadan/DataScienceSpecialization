@@ -1,0 +1,54 @@
+---
+title: "R - Text Mining Bag of Words"
+author: "MOHAMMAD SHADAN"
+date: "May 2, 2017"
+output: html_document
+---
+
+## 1. Jumping into text mining with bag of words 
+
+Quick taste of text mining
+
+It is always fun to jump in with a quick and easy example. Sometimes we can find out the author's intent and main ideas just by looking at the most common words.
+
+At its heart, bag of words text mining represents a way to count terms, or n-grams, across a collection of documents. Consider the following sentences, which we've saved to text and made available in your workspace:
+
+text <- "Text mining usually involves the process of structuring the input text. The overarching goal is, essentially, to turn text into data for analysis, via application of natural language processing (NLP) and analytical methods."
+Manually counting words in the sentences above is a pain! Fortunately, the qdap package offers a better alternative. You can easily find the top 4 most frequent terms (including ties) in text by calling the freq_terms function and specifying 4.
+
+frequent_terms <- freq_terms(text, 4)
+The frequent_terms object stores all unique words and their count. You can then make a bar chart simply by calling the plot function on the frequent_terms object.
+
+plot(frequent_terms)
+Instructions
+We've created an object in your workspace called new_text containing several sentences.
+
+Load the qdap package
+
+     Print new_text to the console.
+     Create term_count consisting of the 10 most frequent terms in new_text.
+     Plot a bar chart with the results of term_count.
+     
+```{r}
+new_text <- "DataCamp is the first online learning platform that focuses on building the best learning experience specifically for Data Science. We have offices in Boston and Belgium and to date, we trained over 250,000 (aspiring) data scientists in over 150 countries. These data science enthusiasts completed more than 9 million exercises. You can take free beginner courses, or subscribe for $25/month to get access to all premium courses."
+
+# Load qdap
+# install.packages("qdap")
+# install.packages("qdapRegex")
+install.packages("qdapTools")
+library(qdapRegex)
+library(qdapTools)
+library(gender)
+library(qdap)
+
+# Print new_text to the console
+print(new_text)
+
+# Find the 10 most frequent terms: term_count
+term_count <- freq_terms(new_text,10)
+
+# Plot term_count
+plot(term_count)
+```
+
+

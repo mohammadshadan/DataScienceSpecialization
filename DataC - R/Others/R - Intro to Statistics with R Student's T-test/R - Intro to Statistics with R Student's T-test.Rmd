@@ -1,0 +1,332 @@
+---
+title: "R - Intro to Statistics with R Student's T-test"
+author: "MOHAMMAD SHADAN"
+date: "May 28, 2017"
+output: html_document
+---
+
+# 1. Introduction to t-tests
+
+## Statistical Test to test means - Video
+
+### Polling liberals and conservatives
+
+You are responsible for conducting polls to understand voters' preferences for a particular political candidate.
+
+In the first poll, you want to understand how preferences vary between liberals and conservatives. You ask a group of liberals and a group of conservatives to each rate their likelihood of voting for the candidate.
+
+Which test should you use to determine if there's a significant difference in preferences between these two groups?
+
+Possible Answers
+Single sample t-test
+Dependent t-test
+Independent t-test (Correct)
+
+A single sample t-test is used to compare a single group to the overall population.
+A dependent t-test is used to compare a single group at two different points in time.  
+An independent t-test is used to compare two independent groups
+
+
+### More political polls
+
+In the previous exercise, you decided to conduct an independent t-test to compare liberals and convervatives, since you were comparing two independent samples at a single point in time. The poll was so successful that you decide to conduct two more.
+
+In the second poll, you want to understand the effect of a campaign speech on voters' preferences. You ask a single group of voters to rate their likelihood of voting for the candidate before the speech and again after the speech.
+
+In the third poll, you want to understand if voters from a particular neighborhood are likely to vote differently when compared to the overall voting population. You poll voters from this neighborhood and compare the results to a recent and trustworthy national poll.
+
+Which tests should you use for the second and third polls, respectively?
+
+Possible Answers
+Dependent t-test, independent t-test
+Independent t-test, single sample t-test
+Single sample t-test, dependent t-test
+Dependent t-test, single sample t-test (Correct)  
+
+A dependent t-test is used to compare a single group at two different points in time and an independent t-test is used to compare two independent groups.    
+An independent t-test is used to compare two independent groups and a single sample t-test is used to compare a single group to the overall population.    
+ A single sample t-test is used to compare a single group to the overall population and a dependent t-test is used to compare a single group at two different points in time.     
+ 
+## Sampling distributions (1) - Video
+
+Significance tests
+50xp
+Which of the following are commonly referred to as significance tests?
+
+Possible Answers
+z-tests
+t-tests
+p-values
+Options 1 & 2 above (Correct)
+None of the above
+
+
+### What's a summary statistic?
+
+A sampling distribution is a hypthotical distribution of a summary statistic from...
+
+Possible Answers
+Multiple samples of different sizes, each from the same underlying population.
+Multiple samples of the same size, each from the same underlying population. (Correct)
+Multiple samples of different sizes, each from a different underlying population.
+Multiple samples of the same size, each from a different underlying population.
+A single sample from the underlying population.
+
+## Sampling distributions (2) - Video
+
+Single sample t-tests
+50xp
+You want to know how a group of people from a particular geographic region perform on a well-known test of intelligence. In particular, you are interested in finding out whether or not this group scores significantly higher than the overall population on an IQ test. This is a form of Null Hypothesis Significance Testing (NHST), where the null hypothesis is that there's no difference between this group and the overall population.
+
+Using a random sample of 10 subjects from the group, you find that their mean IQ is 1.5 standard errors higher than the mean IQ of the population. What do you conclude (using a significance level of 5%) regarding the group's intelligence? (Recall that the critical value for the z-distribution at a significance level of 5% is 1.96.)
+
+Possible Answers
+There is not enough information to make a conclusion.
+The group's IQ is not significantly different from the mean IQ of the population. (Correct)
+The group's IQ is significantly different from the mean IQ of the population.
+The group's IQ is equal to the mean IQ of the population.
+
+ Point 3 is wrong because : The z-score has to be larger than the critical value for the result to be significant.
+ 
+ 
+### Understanding the t-distribution
+
+When performing a t-test, you first calculate your t-statistic using the familiar formula:
+
+t=X???MSE / SE
+
+XX is the observed value, MM is the expected value under the null hypothesis (or population mean), and SESE is the standard error. Once you've computed the t-statistic, you then compare it to the so-called critical value, which comes from the relevant t-distribution.
+
+The shape of a t-distribution, and thus the critical value, is determined entirely by its degrees of freedom. To demonstrate this, let's draw some density plots for t-distributions using different degrees of freedom.
+
+Instructions
+Create a vector x that contains a sequence of length 100 between -4 and 4. See ?seq for help.
+Use dt() to generate t-distributions with 4, 6, 8, 10, and 12 degrees of freedom (in that order). The first argument to dt() is the vector of values at which to evalute the t-distribution (x from above) and the second argument (df) is the degrees of freedom.
+Plot each of the t-distributions. Once the inital plot() is created, you'll use lines() to plot each additional distribution. The two arguments to lines() are the same as the first two arguments to plot(), except that you'll have to substitute the appropriate y-values. Use the color black for 4 degrees of freedom, red for 6, orange for 8, green for 10, and blue for 12.
+Add a legend() to your plot. The legend should be situated at the top right corner of your plot and should have the title "t-distributions". This is done by setting the first argument to "topright" and the title argument to "t-distributions".
+ 
+```{r}
+# ?dt
+
+# Generate a vector of 100 values between -4 and 4
+x <- seq(-4, 4, length = 100)
+
+# Simulate the t-distribution
+y_1 <- dt(x, df = 4)
+y_2 <- dt(x, df = 6)
+y_3 <- dt(x, df = 8)
+y_4 <- dt(x, df = 10)
+y_5 <- dt(x, df = 12)
+
+# Plot the t-distributions
+plot(x, y_1, type = "l", lwd = 2, xlab = "t-value", ylab = "Density", 
+     main = "Comparison of t-distributions", col = "black")
+lines(x, y_2, col = "red")
+lines(x, y_3, col = "orange")
+lines(x, y_4, col = "green")
+lines(x, y_5, col = "blue")
+
+# Add a legend
+legend("topright", c("df = 4", "df = 6", "df = 8", "df = 10", "df = 12"), 
+       col = c("black", "red", "orange", "green", "blue"), 
+       title = "t-distributions", lty = 1)
+```
+
+Notice that the peaks and tails of the distributions are different for different degrees of freedom.
+
+### The working memory dataset
+
+In the following exercises, you will conduct a dependent (or paired) t-test on the "working memory" dataset. This dataset consists of the intelligence scores for subjects before and after training, as well as for a control group. Our goal is to assess whether intelligence training results in significantly different intelligence scores for the individuals.
+
+The observations of individuals before and after training are two samples from the same group at different points in time, which calls for a dependent t-test. This will test whether or not the difference in mean intelligence scores before and after training are significant.
+
+The working memory dataset has been loaded into your workspace as the object wm. It contains the data for both the group who received training and the group who did not.
+
+Instructions
+Print wm to the console to get a feel for the data
+Create a subset of wm that includes only the training group and store the result in wm_t. A value of 1 in the train column indicates that a subject received training, while a value of 0 indicates that they did not.
+View summary statistics for wm_t with the describe() function.
+Use the boxplot() function to create a boxplot of the pre and post column of wm_t. Give the x-axis the label "Pre- and Post-Training" and the y-axis the label "Intelligence Score".
+
+```{r}
+getwd()
+wm <- read.table("wm.txt", header=TRUE)
+
+# Take a look at the dataset
+wm
+
+# Create training subset of wm
+wm_t <- subset(wm, train==1)
+ 
+# Summary statistics 
+#library(psych)
+describe(wm_t)
+
+# Create a boxplot with pre- and post-training groups 
+boxplot(wm_t$pre, wm_t$post, main = "Boxplot",
+        xlab = "Pre- and Post-Training" , ylab = "Intelligence Score", 
+        col = c("red", "green"))
+```
+
+he boxplot shows a difference in the means of the two groups but is this difference significant or simply due to chance? Let us find out.
+
+### Perform a dependent t-test
+
+Conducting a dependent t-test, also known as a paired t-test, requires the following steps:
+
+Define null and alternative hypotheses
+Decide significance level ????
+Compute observed t-value
+Find critical value
+Compare observed value to critical value
+We're performing a Null Hypothesis Significance Test (NHST), so our null hypothesis is that there's no effect (i.e. training has no impact on intelligence scores). The alternative hypothesis is that training results in signficantly different intelligence scores. We'll use a significance level of 0.05, which is very common in statistics. That takes care of the first two steps!
+
+In this exercise, we'll focus on computing the observed t-value, which is computed as follows:
+
+t=x¯DsD/n?????????
+t=x¯DsD/n
+nn is just the sample size, or the number of individuals in our sample. x¯Dx¯D is the mean of the difference scores, or sum of the difference scores divided by the sample size. Finally, sDsD is the standard deviation of the difference scores:
+
+sD=???(xD???x¯D)2n???1???????????????????????????????????????
+sD=???(xD???x¯D)2n???1
+In the formula for sDsD, xDxD are the individual difference scores and should not be confused with x¯Dx¯D, which is the mean of the difference scores.
+
+Instructions
+Use the code provided to assign the sample size to n.
+Calculate the mean of the difference scores by summing up the differences with sum() and dividing by n. The differences are contained in the gain column of wm_t.
+Compute the standard deviation of the difference scores as defined above. Use n and mean_diff in your calculation and be careful with your brackets! Save the result to sd_diff.
+Compute the observed t-value by combining mean_diff, sd_diff, and n. Store the result in t_obs.
+
+```{r}
+## The training subset, wm_t, is available in your workspace
+
+# Define the sample size
+n <- nrow(wm_t)
+
+# Mean of the difference scores
+mean_diff <- sum(wm_t$gain)/n
+
+# Standard deviation of the difference scores
+sd_diff <- sqrt(sum((wm_t$gain - mean_diff)^2) / (n-1))
+
+# Observed t-value
+t_obs <- mean_diff / (sd_diff / sqrt(n))
+
+# Print observed t-value
+print(t_obs)
+```
+
+### Perform a dependent t-test (2)
+
+Now that we've determined our null and alternative hypotheses, decided on a significance level, and computed our observed t-value, all that remains is to calculate the critical value for this test and compare it to our observed t-value. This will tell us whether we have sufficient evidence to reject our null hypothesis. We'll even go one step further and compute an effect size with Cohen's d!
+
+The critical value is the point on the relevant t-distribution that determines whether the value we observed is extreme enough to warrant rejecting the null hypothesis. Recall that a t-distribution is defined by its degrees of freedom, which in turn is equal to the sample size minus 1. In this example, we have 80 subjects so the relevant t-distribution has 79 degrees of freedom.
+
+We're performing a two-tailed t-test in this situation since we care about detecting a significant effect in either the positive or negative direction. In other words, we want to know if training significantly increases or decreases intelligence, however, given that our observed t-value is positive (14.49) the right-hand is the only relevant value here.
+
+Furthermore, since our desired significance level (i.e. alpha) is 0.05, our critical value is the point on our t-distribution at which 0.025 (0.05 / 2) of its total area of 1 is to the right and thus 0.975 (1 - 0.025) of its total area is to the left.
+
+This point is called the 0.975 quantile and is computed for a t-distrbution in R using the qt() function.
+
+Instructions
+Compute the right critical value and store the result in t_crit. Use qt() with two arguments (in order):
+The desired area to the left of the critical value (i.e. quantile value)
+The relevant degrees of freedom for our t-distribution
+Print the critical value to the console
+Print the observed t-value (t_obs) to compare with the critical value
+Compute Cohen's d, which is the mean of the difference scores divided by the standard deviation of the differences scores. mean_diff and sd_diff from the previous exercise are still available in your workspace. Save the result to cohens_d.
+Print cohens_d to the console.
+
+```{r}
+?qt
+## The variables from the previous exercise are preloaded
+
+# Compute the critical value
+t_crit <- qt(0.975, 79)
+
+# Print the critical value
+print(t_crit)
+
+# Print the observed t-value to compare 
+print(t_obs)
+
+# Compute Cohen's d
+cohens_d <- mean_diff/sd_diff
+
+# View Cohen's d
+cohens_d
+```
+
+### Compare the observed and critical t-values
+
+The variables t_obs and t_crit are still loaded in your workspace. Is the difference in intelligence scores before and after training significantly different from zero?
+
+Possible Answers
+Yes, the difference is statistically significant. (Correct)
+No, the difference is not statistically significant.
+We don't have enough information to draw a conclusion.
+
+
+The observed t-value is significantly larger than the critical value, which tells us the the difference is significant at a significance level of 0.05.
+
+### Interpreting the effect size
+
+The variable cohens_d is still loaded in your workspace. You've determined that the difference pre- and post-training is statistically significant at ??=0.05??=0.05. How would you characterize the effect?
+
+Possible Answers
+Click or Press Ctrl+1 to focus
+The effect is very strong. (Correct)
+The effect is quite weak.
+We need more information to say whether the effect is strong or weak.
+
+A Cohen's d of 1.62 means that the intelligence scores of our subjects changed by 1.62 standard deviations, which is very large!
+
+
+### Let R do the dirty work
+
+Thanks to the handy t.test() function in R, it's not necessary to manually compute the t-statistic every time you want to do a t-test. Similarly, the cohensD() function from the lsr package automates the process of computing Cohen's d. We'll continue with the working memory example to illustrate.
+
+In the case of our dependent t-test, we need to specify these arguments to t.test():
+
+x: Column of wm_t containing post-training intelligence scores
+y: Column of wm_t containing pre-training intelligence scores
+paired: Whether we're doing a dependent (i.e. paired) t-test or independent t-test. In this example, it's TRUE
+Note that t.test() carries out a two-sided t-test by default, which is exactly what we want here, but this behavior can be altered with the alternative argument. See ?t.test for more info.
+
+For cohensD(), we'll need to specify three arguments:
+
+x: Column of wm_t containing post-training intelligence scores
+y: Column of wm_t containing pre-training intelligence scores
+method: Version of Cohen's d to compute, which should be "paired" in this case
+If you're successful, you'll get the same values you got when you did everything "by hand" in the previous exercises.
+
+Instructions
+The wm_t dataset has been loaded into your workspace.
+
+Apply t.test() to wm_t to test whether there's a significant difference between pre- and post-training intelligence scores. Post-training scores are contained in wm_t$post and pre-training scores in wm_t$post. Don't save the result.
+Apply cohensD() to wm_t to compute Cohen's d. Use the same columns as inputs for x and y. Don't save the result.
+
+```{r}
+## The lsr package has been loaded for you
+
+# Conduct a paired t-test using the t.test function
+t.test(wm_t$post, wm_t$pre, paired=TRUE)
+
+# Calculate Cohen's d
+library(lsr)
+cohensD(wm_t$post, wm_t$pre, method="paired")
+```
+
+Have a look at the output of functions t.test() and cohensD() to confirm that they are indeed the same as the results from the previous exercises.
+
+### Pop quiz!
+
+You are interested in the effect of training on a particular test of performance. You take a group of 100 people and find that the group had an average gain in performance of 10 points after training compared to before training. Additionally, you find that the standard error of the individual differences is equal to 5. What is the value of the t-statistic?
+
+Possible Answers
+1
+20
+2 (Correct)
+There is not enough information to answer the question.
+
+Calculation of the t-statistic is a vital step in the hypothesis testing process.

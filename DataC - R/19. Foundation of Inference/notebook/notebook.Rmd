@@ -1,0 +1,283 @@
+---
+title: "R Notebook"
+output: 
+  html_notebook: 
+    toc: yes
+---
+
+
+#1. Introduction to ideas of inference 
+## Welcome to the course!
+
+## Hypotheses (1)
+
+Consider drug A for diabetes that a pharmaceutical company is trying to pass through the FDA. Currently, most doctors prescribe drug B to treat diabetes.
+
+Which would be a good null hypothesis?
+
+Possible Answers    
+
+- Drug A is better than drug B at treating diabetes.
+- Drug A is worse than drug B at treating diabetes.
+- Drug A is different than drug B at treating diabetes (but you don't know if it is better or worse).
+- Drug A is the same as drug B at treating diabetes. (Correct)
+
+
+### Hypotheses (2)
+
+Consider the same situation as in the last exercise. A pharmaceutical company is trying to pass drug A for diabetes through the FDA, but most doctors currently prescribe drug B.
+
+Which would be a good alternative hypothesis?
+
+Possible Answers
+
+- Drug A is better than drug B at treating diabetes.
+- Drug A is worse than drug B at treating diabetes.
+- Drug A is different than drug B at treating diabetes (but you don't know if it is better or worse).
+- Drug A is the same as drug B at treating diabetes.
+
+The alternative hypothesis corresponds to the research question of interest, in this case whether drug A is more effective at treating diabetes than drug B.
+
+## Randomized distributions
+
+
+
+
+## Working with the NHANES data
+
+Throughout this chapter, you will use the NHANES dataset from the NHANES R package. These data are collected by the CDC and can be thought of as a random sample of US residents.
+
+Before moving on to investigate particular variables, you'll have an opportunity to briefly explore the data in this exercise.
+
+Instructions
+
+- Load the dplyr, ggplot2, and NHANES packages, one at a time.
+- Use the names() function to list the variables included in NHANES. (See ?NHANES for more info.)
+- Create a barplot for HomeOwn broken down by Gender. Use geom_bar(position = "fill") to compare relative frequencies.
+- Create a density plot for SleepHrsNight colored by SleepTrouble and faceted by HealthGen.
+- Note that because of the discrete nature of the data collection, the density should be smoothed a bit using adjust = 2.
+- Use facet_wrap(~ HealthGen) for the faceting, which will make it easier to visualize how the variables of interest vary by.
+ 
+ 
+ 
+```{r}
+# Load packages
+library(dplyr)
+library(ggplot2)
+library(NHANES)
+#install.packages("NHANES")
+
+# What are the variables in the NHANES dataset?
+names(NHANES)
+
+# Create bar plot for Home Ownership by Gender
+ggplot(NHANES, aes(x = Gender, fill = HomeOwn)) + 
+  geom_bar(position = "fill") +
+  ylab("Relative frequencies")
+
+# Density for SleepHrsNight colored by SleepTrouble, faceted by HealthGen
+ggplot(NHANES, aes(x =  SleepHrsNight, col = SleepTrouble)) + 
+  geom_density(adjust=2) + 
+  facet_wrap(~HealthGen)
+```
+
+Notice that the warning message for the densities and the grey portions of the bars both indicate a large number of missing observations in the dataset. If this were your dataset, it would be important to stop here and consider the cause of the missingness. For the course, we will now proceed without worrying about the missing observations.    
+
+```{r}
+#Testing
+dim(NHANES)
+```
+
+
+## Randomly allocating samples
+
+As seen in the video, you will now use R to randomly permute the observations and calculate a difference in proportions that could arise from a null distribution.
+
+Using the NHANES dataset, let's investigate the relationship between gender and home ownership. Type ?NHANES in the console to get a description of its variables.
+
+Instructions
+
+The dplyr, ggplot2, and NHANES packages have been loaded for you.
+
+- Subset the NHANES dataset to consider only individuals whose home ownership status is either "Own" or "Rent". Save the result to homes.
+- Perform a single permutation to evaluate whether home ownership status (i.e. HomeOwn) differs between the "female" and "male" groups:
+- In your mutate() call, use sample() to shuffle home ownership status. Call this new variable HomeOwn_perm, a permuted version of HomeOwn.
+- Group by Gender.
+- In both the original data and in the permuted data, compute the proportion of individuals who own a home. Note that this will calculate proportions for both genders since you've grouped by the Gender variable in the line before it.
+- Using the diff() function, calculate the difference in proportion of home ownership for both prop_own_perm, the permuted data, and prop_own, the original data.
+
+```{r}
+# Subset the data: homes
+homes <- NHANES %>%
+  select(Gender, HomeOwn) %>%
+  filter(HomeOwn %in% c("Own", "Rent"))
+
+# Perform one permutation 
+homes %>%
+  mutate(HomeOwn_perm = sample(HomeOwn)) %>%
+  group_by(Gender) %>%
+  summarize(prop_own_perm = mean(HomeOwn_perm == "Own"), 
+            prop_own = mean(HomeOwn == "Own")) %>%
+  summarize(diff_perm = diff(prop_own_perm),
+            diff_orig = diff(prop_own))
+```
+
+Keep in mind, this is just a single random permutation. Next, you'll look at several permuted differences to see how they compare with the observed difference.
+
+
+## Randomization dotplot (n = 10)
+
+As you saw in the video, natural variability can be modeled from shuffling observations around to remove any relationships that might exist in the population. This is done with the rep_sample_n() function from the oilabs package. Within it, you must specify arguments for the data (tbl), the sample size, the number of samples to take (reps), and whether sampling should be done with or without replacement (replace). The output includes a new column, replicate, which indicates the sample number. For example,
+
+homes %>% 
+  rep_sample_n(size = 5, reps = 3)
+will return three samples of 5 observations from the homes dataset you created in the last exercise. The first 5 rows will have a value of 1 in the replicate column, the next 5 rows will have a value of 2, and so on. Note that the default value for the replace argument is FALSE.
+
+In this exercise, you will permute the home ownership variable 10 times. By doing so, you will ensure that there is no relationship between home ownership and gender, so any difference in home ownership proportion for female versus male will be due only to natural variability.
+
+Instructions  
+
+- The dplyr, ggplot2, NHANES, and oilabs packages have been loaded for you and the homes dataset you created in the last exercise is available in your workspace.
+- Using rep_sample_n(), repeat the permutation process from the last exercise to get 10 null differences in proportions (i.e. reps = 10) using all observations in the homes dataset. Assign the result to homeown_perm.
+- Print the permuted differences in homeown_perm to the console.
+- Using geom_dotplot(), plot the differences in proportions obtained by shuffling the HomeOwn variable. Adjust the size of the dots by including binwidth = .001 in your call to geom_dotplot().
+
+```{r, eval=FALSE}
+library(devtools)
+devtools::install_github("andrewpbray/oilabs")
+library(oilabs)
+```
+
+```{r, eval=FALSE, include=FALSE}
+rep_sample_n
+function (tbl, size, replace = FALSE, reps = 1) 
+{
+    n <- nrow(tbl)
+    i <- unlist(replicate(reps, sample.int(n, size, replace = replace), 
+        simplify = FALSE))
+    rep_tbl <- cbind(replicate = rep(1:reps, rep(size, reps)), 
+        tbl[i, ])
+    dplyr::group_by(rep_tbl, replicate)
+}
+```
+
+```{r}
+library(oilabs)
+# Perform 10 permutations
+homeown_perm <- homes %>%
+  rep_sample_n(size = nrow(homes), reps = 10) %>%
+  mutate(HomeOwn_perm = sample(HomeOwn)) %>%
+  group_by(replicate,Gender) %>%
+  summarize(prop_own_perm = mean(HomeOwn_perm == "Own"), 
+            prop_own = mean(HomeOwn == "Own")) %>%
+  summarize(diff_perm = diff(prop_own_perm),
+            diff_orig = diff(prop_own)) # male - female
+
+# Print differences to console
+print(homeown_perm)
+
+# Dotplot of 10 permuted differences in proportions
+ggplot(homeown_perm, aes(x = diff_perm)) + 
+  geom_dotplot(binwidth = 0.001)
+```
+
+From the dotplot, it's still hard to get an idea of what the null distribution looks like. You'll repeat the process with 100 permutations in the next exercise. Awesome job!
+
+## Randomization dotplot (n = 100)
+
+By permuting the home ownership variable multiple times, you generate differences in proportions when in fact the variables are not at all related.
+
+Instructions   
+
+- The dplyr, ggplot2, NHANES, and oilabs packages have been loaded for you. Repeat the permuting and plotting with 100 differences in proportions generated by shuffling the HomeOwn variable. Adjust the size of the dots by including binwidth = .001 in your call to geom_dotplot().
+
+```{r}
+# Perform 100 permutations
+homeown_perm <- homes %>%
+  rep_sample_n(size = nrow(homes), reps = 100) %>%
+  mutate(HomeOwn_perm = sample(HomeOwn)) %>%
+  group_by(replicate,Gender) %>%
+  summarize(prop_own_perm = mean(HomeOwn_perm == "Own"),
+            prop_own = mean(HomeOwn == "Own")) %>%
+  summarize(diff_perm = diff(prop_own_perm),
+            diff_orig = diff(prop_own)) # male - female
+
+# Dotplot of 100 permuted differences in proportions
+ggplot(homeown_perm, aes(x = diff_perm)) + 
+  geom_dotplot(binwidth = 0.001)
+```
+
+ It's much easier to get a feel for the distribution now. In the next exercise, you'll see how 1000 permutations are distributed.
+ 
+## Randomization density
+
+Using 100 repetitions allows you to understand the mechanism of permuting. However, 100 is not enough to observe the full range of likely values for the null differences in proportions.
+
+In this exercise, you'll repeat the process 1000 times to get a sense for the complete distribution of null differences in proportions.
+
+Instructions  
+
+The dplyr, ggplot2, NHANES, and oilabs packages have been loaded for you.
+
+- Generate 1000 differences in proportions by shuffling the HomeOwn variable and following the same procedure as before.
+- Use geom_density() to create a smoothed visual representation of the distribution of differences.
+    
+```{r}
+# Perform 1000 permutations
+homeown_perm <- homes %>%
+  rep_sample_n(size = nrow(homes), reps = 1000) %>%
+  mutate(HomeOwn_perm = sample(HomeOwn)) %>%
+  group_by(replicate,Gender) %>%
+  summarize(prop_own_perm = mean(HomeOwn_perm == "Own"),
+            prop_own = mean(HomeOwn == "Own")) %>%
+  summarize(diff_perm = diff(prop_own_perm),
+            diff_orig = diff(prop_own)) # male - female
+
+# Density plot of 1000 permuted differences in proportions
+ggplot(homeown_perm, aes(x = diff_perm)) + 
+  geom_density()
+```
+You can now see that the distribution is approximately normally distributed around -0.01, but what can we conclude from it? You'll learn how to use this distribution in the next video.
+
+## Using the randomization distribution
+
+Do the data come from the population?
+100xp
+Recall that the observed difference (i.e. the difference in proportions in the homes dataset, shown as the red vertical line) was around -0.0078, which seems to fall below the bulk of the density of shuffled differences. It is important to know, however, whether any of the randomly permuted differences were as extreme as the observed difference.
+
+In this exercise, you'll re-create this dotplot as a density plot and count the number of permuted differences that were to the left of the observed difference.
+
+Instructions    
+
+The homeown_perm dataset is available in your workspace.     
+- Using geom_density(), plot the permuted differences. Add a vertical red line with geom_vline() where the observed statistic falls.
+- Count the number of permuted differences that were lower than or equal to the observed difference.
+    
+    
+    
+```{r}
+# Plot permuted differences
+ggplot(homeown_perm, aes(x =diff_perm)) + 
+  geom_density() +
+  geom_vline(aes(xintercept = diff_orig),
+          col = "red")
+
+# Compare permuted differences to observed difference
+homeown_perm %>%
+  summarize(sum(diff_orig >= diff_perm))
+```
+
+
+212 permuted differences are more extreme than the observed difference. This only represents 21.2% of the null statistics, so you can conclude that the observed difference is consistent with the permuted distribution.
+
+
+## What can you conclude?
+
+What can you conclude from the analysis?
+
+Possible Answers     
+
+- We have learned that being female causes people to buy houses.
+- We have learned that our data is consistent with the hypothesis of no difference in home ownership across gender. (Correct)
+- We have learned that the observed difference (from the data) in proportion of home ownership across gender is due to something other than random variation.
+
